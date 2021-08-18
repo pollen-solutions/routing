@@ -1,14 +1,15 @@
 {
   "name": "pollen-solutions/routing",
   "description": "Pollen Solutions - Routing Component - HTTP request mapping and HTTP response resolution.",
-  "homepage": "https://www.presstify.com/pollen-solutions/routing/",
+  "homepage": "https://www.presstify.com/pollen-solutions/routing",
   "keywords": [
     "pollen-solutions",
     "component",
+    "router",
     "PSR-7",
     "PSR-15"
   ],
-  "time": "2021-07-09",
+  "time": "2021-08-18",
   "license": "MIT",
   "authors": [
     {
@@ -20,7 +21,7 @@
     "php": "^7.4 || ^8.0",
     "ext-json": "*",
     "laminas/laminas-diactoros": "^2.5",
-    "laminas/laminas-httphandlerrunner": "^1.3",
+    "laminas/laminas-httphandlerrunner": "^2.0",
     "league/route": "^5.0",
     "nyholm/psr7": "^1.3",
     "pollen-solutions/http": "^1.0",
@@ -42,13 +43,7 @@
     }
   },
   "suggest": {
-    "pollen-solutions/container" : "Pollen Container Component - PSR-11 ready Dependencies Injection Container."
+    "pollen-solutions/container" : "Pollen Solutions - Container Component - PSR-11 ready Dependencies Injection Container."
   },
-  "minimum-stability": "dev",
-  "prefer-stable": true,
-  "config": {
-    "optimize-autoloader": true,
-    "preferred-install": "dist",
-    "sort-packages": true
-  }
+  "minimum-stability": "dev"
 }
