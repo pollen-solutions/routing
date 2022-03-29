@@ -6,20 +6,19 @@ namespace Pollen\Routing;
 
 use League\Route\Middleware\MiddlewareAwareInterface;
 use Pollen\Http\RedirectResponseInterface;
-use Pollen\Http\RequestInterface;
-use Pollen\Http\ResponseInterface;
-use Pollen\Support\Concerns\ConfigBagAwareTraitInterface;
 use Pollen\Support\Proxy\ContainerProxyInterface;
 use Pollen\Support\Proxy\HttpRequestProxyInterface;
 use Psr\Http\Message\ResponseInterface as PsrResponse;
+use Psr\Http\Message\ServerRequestInterface as PsrRequest;
+use Psr\Http\Server\RequestHandlerInterface;
 
 /**
  * @mixin RouteCollectorAwareTrait
  */
 interface RouterInterface extends
-    ConfigBagAwareTraitInterface,
     ContainerProxyInterface,
     HttpRequestProxyInterface,
+    RequestHandlerInterface,
     MiddlewareAwareInterface
 {
     /**
@@ -67,13 +66,6 @@ interface RouterInterface extends
      * @return callable|null
      */
     public function getFallbackCallable(): ?callable;
-
-    /**
-     * Get HTTP Request instance for handling route collection.
-     *
-     * @return RequestInterface
-     */
-    public function getHandleRequest(): RequestInterface;
 
     /**
      * Get named route instance.
@@ -162,13 +154,6 @@ interface RouterInterface extends
     public function group(string $prefix, callable $group): RouteGroupInterface;
 
     /**
-     * HTTP request instance to handle route collection.
-     *
-     * @return ResponseInterface
-     */
-    public function handleRequest(): ResponseInterface;
-
-    /**
      * Checks if a fallback route handler exists.
      *
      * @return bool
@@ -185,15 +170,6 @@ interface RouterInterface extends
      * @return RouteInterface
      */
     public function map(string $method, string $path, $handler): RouteInterface;
-
-    /**
-     * Send the HTTP response.
-     *
-     * @param ResponseInterface $response
-     *
-     * @return bool
-     */
-    public function sendResponse(ResponseInterface $response): bool;
 
     /**
      * Set base path prefix for routes.
@@ -223,21 +199,30 @@ interface RouterInterface extends
     public function setFallback($fallback): RouterInterface;
 
     /**
-     * Set the handle HTTP request.
+     * HTTP request instance to handle route collection.
      *
-     * @param RequestInterface $handleRequest
+     * @param PsrRequest $request
      *
-     * @return static
+     * @return PsrResponse
      */
-    public function setHandleRequest(RequestInterface $handleRequest): RouterInterface;
+    public function handle(PsrRequest $request): PsrResponse;
+
+    /**
+     * Send the HTTP response.
+     *
+     * @param PsrResponse $response
+     *
+     * @return bool
+     */
+    public function send(PsrResponse $response): bool;
 
     /**
      * Terminate the HTTP cycle.
      *
-     * @param RequestInterface $request
-     * @param ResponseInterface $response
+     * @param PsrRequest $request
+     * @param PsrResponse $response
      *
      * @return void
      */
-    public function terminateEvent(RequestInterface $request, ResponseInterface $response): void;
+    public function terminate(PsrRequest $request, PsrResponse $response): void;
 }

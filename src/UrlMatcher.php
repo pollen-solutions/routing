@@ -4,56 +4,56 @@ declare(strict_types=1);
 
 namespace Pollen\Routing;
 
+use FastRoute\Dispatcher;
 use FastRoute\Dispatcher as FastRoute;
+use FastRoute\Dispatcher\GroupCountBased;
+use League\Route\Route;
+use League\Route\RouteConditionHandlerInterface;
 use Pollen\Http\RequestInterface;
+use Pollen\Routing\RouterInterface;
+use Psr\Http\Message\ServerRequestInterface;
 
 class UrlMatcher implements UrlMatcherInterface
 {
-    /**
-     * HTTP request instance.
-     * @var RequestInterface
-     */
-    protected RequestInterface $request;
-
-    /**
-     * Router instance.
-     * @var RouterInterface
-     */
     protected RouterInterface $router;
 
     /**
      * @param RouterInterface $router
-     * @param RequestInterface $request
      */
-    public function __construct(RouterInterface $router, RequestInterface $request)
+    public function __construct(RouterInterface $router)
     {
-        $this->router = clone $router;
-        $this->request = $request;
+        $this->router = $router;
     }
 
     /**
-     * Vérification de correspondance
-     * @return array
+     * @param ServerRequestInterface $serverRequest
+     *
+     * @return ServerRequestInterface
      */
-    public function match(): array
+    public function handle(ServerRequestInterface $serverRequest): ServerRequestInterface
     {
-        $this->router->setHandleRequest($this->request);
-        $this->router->getRouteCollector()->prepareRoutes($this->request->psr());
+        $routeCollector = $this->router->getRouteCollector();
 
-        $method = $this->request->getMethod();
-        $uri    = $this->request->getRewriteBase() . $this->request->getPathInfo();
+        if (!$routeCollector->isRoutesPrepared()) {
+            $routeCollector->prepareRoutes($serverRequest);
+            $routeCollector->setRoutesPrepared();
+        }
+        $data = $routeCollector->getRoutesData();
 
-        $match = (new RouteDispatcher($this->router))->dispatch($method, $uri);
+        $method = $serverRequest->getMethod();
+        $path = $serverRequest->getUri()->getPath();
 
-        if ($match[0] === FastRoute::FOUND) {
-            $route = ($match[1] instanceof RouteInterface) ? $match[1] : new Route($method, $uri, $match[1]);
-            $this->request->attributes->set('_route', $route);
+        $match = (new GroupCountBased($data))->dispatch($method, $path);
+
+        if ($match[0] === Dispatcher::FOUND) {
+            $route = ($match[1] instanceof RouteConditionHandlerInterface) ? $match[1] : new Route($method, $path, $match[1]);
+            $serverRequest = $serverRequest->withAttribute('_route', $route);
 
             foreach((array)$match[2] as $varKey => $varVal) {
-                $this->request->attributes->set("_$varKey", $varVal);
+                $serverRequest = $serverRequest->withAttribute("_$varKey", $varVal);
             }
         }
 
-        return $match;
+        return $serverRequest;
     }
 }

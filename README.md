@@ -30,7 +30,6 @@ return new Response('<h1>Hello, World!</h1>');
 
 // Setting Handle Request (optionnal)
 $request = Request::createFromGlobals();
-$router->setHandleRequest($request);
 
 // Map a Fallback Route (optionnal)
 $router->setFallback(function () {
@@ -38,11 +37,11 @@ $router->setFallback(function () {
 });
 
 // Catch HTTP Response
-$response = $router->handleRequest();
+$response = $router->handle($request);
 
 // Send the response to the browser
-$router->sendResponse($response);
+$router->send($response);
 
 // Trigger the terminate event
-$router->terminateEvent($request, $response);
+$router->terminate($request, $response);
 ```

@@ -51,7 +51,7 @@ interface RouteCollectorInterface extends BaseRouteCollectorInterface
     public function getRoute(string $name): ?RouteInterface;
 
     /**
-     * Get routes url patterns.
+     * Get routes url pattern.
      *
      * @return array
      */

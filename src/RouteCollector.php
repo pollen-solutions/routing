@@ -146,7 +146,7 @@ class RouteCollector extends BaseRouteCollector implements RouteCollectorInterfa
             /** @var RouteInterface $route */
             $route = $this->getNamedRoute($name);
 
-             $route;
+             return $route;
         } catch(Exception $e) {
             return null;
         }
@@ -175,5 +175,29 @@ class RouteCollector extends BaseRouteCollector implements RouteCollectorInterfa
         }
 
         parent::prepareRoutes($request);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function isRoutesPrepared(): bool
+    {
+        return $this->routesPrepared;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function setRoutesPrepared(bool $prepared = true): void
+    {
+        $this->routesPrepared = $prepared;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getRoutesData(): array
+    {
+        return $this->routesData;
     }
 }
