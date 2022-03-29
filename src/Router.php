@@ -13,22 +13,22 @@ use League\Route\Http\Exception\HttpExceptionInterface as BaseHttpExceptionInter
 use Pollen\Http\RedirectResponse;
 use Pollen\Http\RedirectResponseInterface;
 use Pollen\Http\Request;
-use Pollen\Http\RequestInterface;
 use Pollen\Http\Response;
 use Pollen\Http\ResponseInterface;
-use Pollen\Support\Concerns\ConfigBagAwareTrait;
 use Pollen\Support\Exception\ManagerRuntimeException;
 use Pollen\Support\Proxy\ContainerProxy;
 use Pollen\Support\Proxy\HttpRequestProxy;
 use Pollen\Routing\Exception\HttpExceptionInterface;
+use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface as Container;
+use Psr\Container\NotFoundExceptionInterface;
 use Psr\Http\Message\ResponseInterface as PsrResponse;
+use Psr\Http\Message\ServerRequestInterface as PsrRequest;
 use Psr\Http\Server\MiddlewareInterface as BaseMiddlewareInterface;
 use RuntimeException;
 
 class Router implements RouterInterface
 {
-    use ConfigBagAwareTrait;
     use ContainerProxy;
     use HttpRequestProxy;
     use MiddlewareAwareTrait;
@@ -65,25 +65,16 @@ class Router implements RouterInterface
     protected $fallback;
 
     /**
-     * HTTP Request instance for handling route collection.
-     * @var RequestInterface|null
-     */
-    protected ?RequestInterface $handleRequest = null;
-
-    /**
      * Route collector instance.
      * @var RouteCollectorInterface|null
      */
     protected ?RouteCollectorInterface $routeCollector = null;
 
     /**
-     * @param array $config
      * @param Container|null $container
      */
-    public function __construct(array $config = [], ?Container $container = null)
+    public function __construct(?Container $container = null)
     {
-        $this->setConfig($config);
-
         if ($container !== null) {
             $this->setContainer($container);
         }
@@ -115,7 +106,7 @@ class Router implements RouterInterface
      */
     public function addRoute(RouteInterface $route): RouterInterface
     {
-        $this->routeCollector->addRoute($route);
+        $this->getRouteCollector()->addRoute($route);
 
         return $this;
     }
@@ -200,18 +191,6 @@ class Router implements RouterInterface
     /**
      * @inheritDoc
      */
-    public function getHandleRequest(): RequestInterface
-    {
-        if ($this->handleRequest === null) {
-            $this->handleRequest = $this->httpRequest();
-        }
-
-        return $this->handleRequest;
-    }
-
-    /**
-     * @inheritDoc
-     */
     public function hasFallback(): bool
     {
         return $this->fallback !== null;
@@ -281,8 +260,18 @@ class Router implements RouterInterface
      */
     public function getRouteUrl(RouteInterface $route, array $args = [], bool $isAbsolute = false): ?string
     {
+        if (!$container = $this->getContainer()) {
+            return null;
+        }
+
         try {
-            $generator = new UrlGenerator($route->getPath(), $this->handleRequest);
+            $request = $container->get(PsrRequest::class);
+        } catch (ContainerExceptionInterface|NotFoundExceptionInterface $e) {
+            return null;
+        }
+
+        try {
+            $generator = new UrlGenerator($route->getPath(), $request);
 
             return $generator
                 ->setAbsoluteEnabled($isAbsolute)
@@ -301,43 +290,20 @@ class Router implements RouterInterface
      */
     public function group(string $prefix, callable $group): RouteGroupInterface
     {
-        $group = new RouteGroup($prefix, $group, $this);
+        $_group = new RouteGroup($prefix, $group, $this);
 
         if ($container = $this->getContainer()) {
-            $group->setContainer($container);
+            $_group->setContainer($container);
         }
 
-        $this->routeCollector->addGroup($group);
+        $this->getRouteCollector()->addGroup($_group);
 
-        return $group;
+        return $_group;
     }
 
     public function head(string $path, $handler): RouteInterface
     {
         return $this->map('HEAD', $path, $handler);
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function handleRequest(): ResponseInterface
-    {
-        try {
-            $request = $this->getHandleRequest();
-
-            $psrResponse = $this->routeCollector->dispatch($request->psr());
-
-            return Response::createFromPsr($psrResponse);
-        } catch (BadRouteException $e) {
-            throw new RuntimeException(
-                sprintf('Bad Route declaration thrown exception : [%s]', $e->getMessage())
-            );
-        } catch (HttpExceptionInterface|BaseHttpExceptionInterface $e) {
-            if ($fallback = $this->getFallbackCallable()) {
-                return $fallback($e);
-            }
-            return new Response($e->getMessage(), $e->getStatusCode());
-        }
     }
 
     /**
@@ -396,36 +362,6 @@ class Router implements RouterInterface
     }
 
     /**
-     * @param ResponseInterface $response
-     *
-     * @return bool
-     */
-    public function sendResponse(ResponseInterface $response): bool
-    {
-        $collect = $this->getRouteCollector();
-
-        foreach ($this->getMiddlewareStack() as $middleware) {
-            $collect->middleware($this->resolveMiddleware($middleware));
-        }
-
-        if ($route = $this->current()) {
-            if ($group = $route->getParentGroup()) {
-                foreach ($group->getMiddlewareStack() as $middleware) {
-                    $collect->middleware($this->resolveMiddleware($middleware));
-                }
-            }
-
-            foreach ($route->getMiddlewareStack() as $middleware) {
-                $collect->middleware($this->resolveMiddleware($middleware));
-            }
-        }
-
-        $psrResponse = $this->beforeSendResponse($response->psr());
-
-        return (new SapiEmitter())->emit($psrResponse);
-    }
-
-    /**
      * @inheritDoc
      */
     public function setBasePrefix(string $basePrefix): RouterInterface
@@ -459,17 +395,56 @@ class Router implements RouterInterface
     /**
      * @inheritDoc
      */
-    public function setHandleRequest(RequestInterface $handleRequest): RouterInterface
+    public function handle(PsrRequest $request): PsrResponse
     {
-        $this->handleRequest = $handleRequest;
+        try {
+            return $this->getRouteCollector()->dispatch($request);
+        } catch (BadRouteException $e) {
+            throw new RuntimeException(
+                sprintf('Bad Route declaration thrown exception : [%s]', $e->getMessage())
+            );
+        } catch (HttpExceptionInterface|BaseHttpExceptionInterface $e) {
+            if ($fallback = $this->getFallbackCallable()) {
+                $response = $fallback($e);
 
-        return $this;
+                return $response instanceof ResponseInterface ? $response->psr() : $response;
+            }
+            return (new Response($e->getMessage(), $e->getStatusCode()))->psr();
+        }
     }
 
     /**
      * @inheritDoc
      */
-    public function terminateEvent(RequestInterface $request, ResponseInterface $response): void
+    public function send(PsrResponse $response): bool
+    {
+        $collect = $this->getRouteCollector();
+
+        foreach ($this->getMiddlewareStack() as $middleware) {
+            $collect->middleware($this->resolveMiddleware($middleware));
+        }
+
+        if ($route = $this->current()) {
+            if ($group = $route->getParentGroup()) {
+                foreach ($group->getMiddlewareStack() as $middleware) {
+                    $collect->middleware($this->resolveMiddleware($middleware));
+                }
+            }
+
+            foreach ($route->getMiddlewareStack() as $middleware) {
+                $collect->middleware($this->resolveMiddleware($middleware));
+            }
+        }
+
+        $response = $this->beforeSendResponse($response);
+
+        return (new SapiEmitter())->emit($response);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function terminate(PsrRequest $request, PsrResponse $response): void
     {
         exit;
     }

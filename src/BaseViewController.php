@@ -101,7 +101,7 @@ abstract class BaseViewController extends BaseController
     }
 
     /**
-     * Returns a HTTP response for a view template.
+     * Returns an HTTP response for a view template.
      *
      * @param string $view
      * @param array $datas
