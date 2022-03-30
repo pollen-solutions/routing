@@ -61,6 +61,13 @@ interface RouterInterface extends
     public function getBasePrefix(): string;
 
     /**
+     * Get base path suffix for routes.
+     *
+     * @return string
+     */
+    public function getBaseSuffix(): string;
+
+    /**
      * Get fallback route handler.
      *
      * @return callable|null
@@ -179,6 +186,15 @@ interface RouterInterface extends
      * @return static
      */
     public function setBasePrefix(string $basePrefix): RouterInterface;
+
+    /**
+     * Set base path suffix for routes.
+     *
+     * @param string|null $baseSuffix
+     *
+     * @return static
+     */
+    public function setBaseSuffix(?string $baseSuffix = null): RouterInterface;
 
     /**
      * Set current route instance.

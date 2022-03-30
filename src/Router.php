@@ -53,6 +53,12 @@ class Router implements RouterInterface
     public ?string $basePrefix = null;
 
     /**
+     * Base path suffix for routes.
+     * @var string|null
+     */
+    public ?string $baseSuffix = null;
+
+    /**
      * Current route instance.
      * @var RouteInterface|null
      */
@@ -155,6 +161,14 @@ class Router implements RouterInterface
             $this->basePrefixNormalized = $this->basePrefix ? '/' . rtrim(ltrim($this->basePrefix, '/'), '/') : '';
         }
         return $this->basePrefixNormalized;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getBaseSuffix(): string
+    {
+        return $this->baseSuffix ?: '';
     }
 
     /**
@@ -312,6 +326,13 @@ class Router implements RouterInterface
     public function map(string $method, string $path, $handler): RouteInterface
     {
         $path = $this->getBasePrefix() . sprintf('/%s', ltrim($path, '/'));
+
+        if (($suffix = $this->getBaseSuffix()) !== null) {
+            if (substr($path, -1) === '/' && substr($suffix, 0, 1) === '/') {
+                $path = rtrim($path, '/');
+            }
+            $path .= $suffix;
+        }
         $route = new Route($method, $path, $handler);
 
         if ($container = $this->getContainer()) {
@@ -368,6 +389,16 @@ class Router implements RouterInterface
     {
         $this->basePrefixNormalized = null;
         $this->basePrefix = $basePrefix;
+
+        return $this;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function setBaseSuffix(?string $baseSuffix = null): RouterInterface
+    {
+        $this->baseSuffix = $baseSuffix;
 
         return $this;
     }
