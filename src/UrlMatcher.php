@@ -5,12 +5,9 @@ declare(strict_types=1);
 namespace Pollen\Routing;
 
 use FastRoute\Dispatcher;
-use FastRoute\Dispatcher as FastRoute;
 use FastRoute\Dispatcher\GroupCountBased;
 use League\Route\Route;
 use League\Route\RouteConditionHandlerInterface;
-use Pollen\Http\RequestInterface;
-use Pollen\Routing\RouterInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
 class UrlMatcher implements UrlMatcherInterface
