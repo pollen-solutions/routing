@@ -13,6 +13,7 @@ use League\Route\Http\Exception\HttpExceptionInterface as BaseHttpExceptionInter
 use Pollen\Http\RedirectResponse;
 use Pollen\Http\RedirectResponseInterface;
 use Pollen\Http\Request;
+use Pollen\Http\RequestInterface;
 use Pollen\Http\Response;
 use Pollen\Http\ResponseInterface;
 use Pollen\Support\Exception\ManagerRuntimeException;
@@ -279,7 +280,7 @@ class Router implements RouterInterface
         }
 
         try {
-            $request = $container->get(PsrRequest::class);
+            $request = $container->get(RequestInterface::class);
         } catch (ContainerExceptionInterface|NotFoundExceptionInterface $e) {
             return null;
         }
