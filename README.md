@@ -15,6 +15,10 @@ composer require pollen-solutions/routing
 ## Basic Usage
 
 ```php
+<?php 
+
+declare(strict_types=1);
+
 use Pollen\Http\Request;
 use Pollen\Http\Response;
 use Pollen\Http\ResponseInterface;
@@ -24,24 +28,30 @@ use Pollen\Routing\Router;
 $router = new Router();
 
 // Map a route
-$router->map('GET', '/', function (): ResponseInterface {
-return new Response('<h1>Hello, World!</h1>');
+$router->map('GET', '/', static function (): ResponseInterface {
+    return new Response('<h1>Hello, World!</h1>');
 });
 
-// Setting Handle Request (optionnal)
-$request = Request::createFromGlobals();
+$router->map('GET', '/phpinfo', static function () {
+    ob_start();
+    phpinfo();
+    return new Response(ob_get_clean());
+});
 
-// Map a Fallback Route (optionnal)
+// Setting Handle Request (optional)
+$psrRequest = Request::createFromGlobals()->psr();
+
+// Map a Fallback Route (optional)
 $router->setFallback(function () {
-    return new Response('<h1>404</h1>', 404);
+    return new Response('<h1>404 - Page not found !</h1>', 404);
 });
 
 // Catch HTTP Response
-$response = $router->handle($request);
+$response = $router->handle($psrRequest);
 
 // Send the response to the browser
 $router->send($response);
 
 // Trigger the terminate event
-$router->terminate($request, $response);
+$router->terminate($psrRequest, $response);
 ```
