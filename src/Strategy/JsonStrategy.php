@@ -1,14 +1,13 @@
-<?php
-
-declare(strict_types=1);
+<?php declare(strict_types=1);
 
 namespace Pollen\Routing\Strategy;
 
 use Exception;
-use Pollen\Http\Response;
-use Pollen\Http\ResponseInterface;
 use League\Route\Strategy\JsonStrategy as BaseJsonStrategy;
 use League\Route\Route;
+use Pollen\Http\Response;
+use Pollen\Http\ResponseInterface;
+use Pollen\Routing\RouteArgumentResolveTrait;
 use Psr\Http\Message\ResponseInterface as PsrResponse;
 use Psr\Http\Message\ServerRequestInterface as PsrRequest;
 
@@ -22,10 +21,7 @@ class JsonStrategy extends BaseJsonStrategy
      */
     public function invokeRouteCallable(Route $route, PsrRequest $request): PsrResponse
     {
-        $controller = $route->getCallable($this->getContainer());
-
-        $args = array_values($route->getVars());
-        $response = $controller(...$args);
+        $response = ($route->getCallable($this->getContainer()))(...$this->resolveRouteArguments($route));
 
         if ($response instanceof ResponseInterface) {
             $response = $response->psr();

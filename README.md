@@ -15,9 +15,7 @@ composer require pollen-solutions/routing
 ## Basic Usage
 
 ```php
-<?php 
-
-declare(strict_types=1);
+<?php declare(strict_types=1);
 
 use Pollen\Http\Request;
 use Pollen\Http\Response;

@@ -1,18 +1,19 @@
-<?php
-
-declare(strict_types=1);
+<?php declare(strict_types=1);
 
 namespace Pollen\Routing\Strategy;
 
-use Pollen\Http\Response;
-use Pollen\Http\ResponseInterface;
 use League\Route\Strategy\ApplicationStrategy as BaseApplicationStrategy;
 use League\Route\Route;
+use Pollen\Http\Response;
+use Pollen\Http\ResponseInterface;
+use Pollen\Routing\RouteArgumentResolveTrait;
 use Psr\Http\Message\ResponseInterface as PsrResponse;
 use Psr\Http\Message\ServerRequestInterface as PsrRequest;
 
 class ApplicationStrategy extends BaseApplicationStrategy
 {
+    use RouteArgumentResolveTrait;
+    
     /**
      * @param Route $route
      * @param PsrRequest $request
@@ -21,10 +22,7 @@ class ApplicationStrategy extends BaseApplicationStrategy
      */
     public function invokeRouteCallable(Route $route, PsrRequest $request): PsrResponse
     {
-        $controller = $route->getCallable($this->getContainer());
-
-        $args = array_merge(array_values($route->getVars()), [$request]);
-        $response = $controller(...$args);
+        $response = ($route->getCallable($this->getContainer()))(...$this->resolveRouteArguments($route));
 
         if ($response instanceof ResponseInterface) {
             $response = $response->psr();
