@@ -21,7 +21,12 @@ class RouteArgumentResolver extends AbstractResolver
     public function resolve(ReflectionParameter $parameter): ?array
     {
         $key = $parameter->getName();
+
         if (!isset($this->params[$key])) {
+            if ($parameter->isOptional() || $parameter->allowsNull()) {
+                return [$key, $parameter->isDefaultValueAvailable() ? $parameter->getDefaultValue() : null];
+            }
+
             return null;
         }
 
@@ -43,7 +48,7 @@ class RouteArgumentResolver extends AbstractResolver
         }
 
         $typeName = $type->getName();
-
+        
         switch ($typeName) {
             case 'array':
                 if (is_array($value)) {
