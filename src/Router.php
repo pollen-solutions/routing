@@ -445,6 +445,11 @@ class Router implements RouterInterface
         }
     }
 
+    public function emit(PsrResponse $response): bool
+    {
+        return $this->send($response);
+    }
+
     /**
      * @inheritDoc
      */

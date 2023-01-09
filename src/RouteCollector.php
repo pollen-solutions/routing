@@ -125,7 +125,7 @@ class RouteCollector extends BaseRouteCollector implements RouteCollectorInterfa
         /** @var Dispatcher $dispatcher */
         $dispatcher = (new RouteDispatcher($this->router))->setStrategy($this->getStrategy());
 
-        foreach ($this->getMiddlewareStack() as $middleware) {
+        foreach ($this->router->getMiddlewareStack() as $middleware) {
             if (is_string($middleware)) {
                 $dispatcher->lazyMiddleware($middleware);
                 continue;

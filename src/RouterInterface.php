@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Pollen\Routing;
 
+use Laminas\HttpHandlerRunner\Emitter\EmitterInterface;
 use League\Route\Middleware\MiddlewareAwareInterface;
 use Pollen\Http\RedirectResponseInterface;
 use Pollen\Support\Proxy\ContainerProxyInterface;
@@ -17,6 +18,7 @@ use Psr\Http\Server\RequestHandlerInterface;
  */
 interface RouterInterface extends
     ContainerProxyInterface,
+    EmitterInterface,
     HttpRequestProxyInterface,
     RequestHandlerInterface,
     MiddlewareAwareInterface
