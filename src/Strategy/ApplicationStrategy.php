@@ -22,7 +22,8 @@ class ApplicationStrategy extends BaseApplicationStrategy
      */
     public function invokeRouteCallable(Route $route, PsrRequest $request): PsrResponse
     {
-        $response = ($route->getCallable($this->getContainer()))(...$this->resolveRouteArguments($route));
+        $controller = $route->getCallable($this->getContainer());
+        $response = $controller(...$this->resolveRouteArguments($route, $controller));
 
         if ($response instanceof ResponseInterface) {
             $response = $response->psr();

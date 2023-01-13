@@ -8,10 +8,9 @@ use Pollen\ArgumentResolver\Resolvers\ContainerResolver;
 
 trait RouteArgumentResolveTrait
 {
-    protected function resolveRouteArguments(Route $route): array
+    protected function resolveRouteArguments(Route $route, $controller): array
     {
         $container = $this->getContainer();
-        $controller = $route->getCallable($container);
 
         $resolvers = [];
 
